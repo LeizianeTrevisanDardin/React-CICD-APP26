@@ -11,27 +11,8 @@ pipeline {
             }
             steps {
                 sh '''
-                    ls -la
-                    node --version
-                    npm --version
-                    npm install
-                    npm run build
-                '''
-            }
-        }
-
-        stage('Test') {
-            agent {
-                docker {
-                    image 'node:22.14.0-alpine'
-                    reuseNode true
-                }
-            }
-            steps {
-                sh '''
-                    node --version
-                    npm --version
-                    CI=true npm test -- --watchAll=false --passWithNoTests
+                    test -f build/index.html 
+                    npm test
                 '''
             }
         }
