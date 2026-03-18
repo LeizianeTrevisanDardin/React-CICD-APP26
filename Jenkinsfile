@@ -1,5 +1,5 @@
 pipeline {
-    agent any
+    agent none
 
     stages {
         stage('Build') {
@@ -29,6 +29,8 @@ pipeline {
             }
             steps {
                 sh '''
+                    node --version
+                    npm --version
                     CI=true npm test -- --watchAll=false --passWithNoTests
                 '''
             }
