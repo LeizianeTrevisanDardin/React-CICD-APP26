@@ -1,11 +1,11 @@
 pipeline {
-    agent none
+    agent any
 
     stages {
         stage('Build') {
             agent {
                 docker {
-                    image 'node:22.14.0-alpine'
+                    image 'node:20.20.0-alpine'
                     reuseNode true
                 }
             }
@@ -23,7 +23,7 @@ pipeline {
             stage('Test') {
             agent {
                 docker {
-                    image 'node:22.14.0-alpine'
+                    image 'node:20.20.0-alpine'
                     reuseNode true
                 }
             }
@@ -33,6 +33,28 @@ pipeline {
                     npm test
                 '''
             }
+            stage('Deploy') {
+            agent {
+                docker {
+                    image 'node:22.14.0-alpine'
+                    reuseNode true
+                }
+            }
+            steps {
+                sh '''
+                    npm install netlify-cli
+                    node_modules/.bin/netlify --version
+                    echo "Deploying to Production. Site ID is: $NETLIFY_SITE_ID"
+                    node_modules/.bin/netlify status
+                    node_modules/.bin/netlify deploy --prod --dir=build 
+                '''
+            }
         }
     }
 }
+}
+
+      environment{
+            NETLIFY_AUTH_TOKEN = credentials('Jenkins_React')
+             NETLIFY_SITE_ID = mySiteId
+        }
