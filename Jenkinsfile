@@ -1,15 +1,16 @@
 pipeline {
     agent any
 
+//CI stage -> CODE -> Build -> Test
     stages {
         stage('Build') {
-            agent {
-                docker {
-                    image 'node:20.20.0-alpine'
-                    reuseNode true
-                }
+            //before steps we create a docker image using this code below. This info comes from docker hub, find in the terminal which node -v is installed and then in tags -> look for the version and add alpine at the end to find a version that is not heavy.
+            docker {
+                image 'node:24.13.0-alpine'
+                reuseNode true
             }
             steps {
+                //this is step is to run in the image what we would in the terminal - the ls -la is to check what is in the folder
                 sh '''
                     ls -la
                     node --version
@@ -20,41 +21,5 @@ pipeline {
                 '''
             }
         }
-            stage('Test') {
-            agent {
-                docker {
-                    image 'node:20.20.0-alpine'
-                    reuseNode true
-                }
-            }
-            steps {
-                sh '''
-                    test -f build/index.html
-                    npm test
-                '''
-            }
-            stage('Deploy') {
-            agent {
-                docker {
-                    image 'node:22.14.0-alpine'
-                    reuseNode true
-                }
-            }
-            steps {
-                sh '''
-                    npm install netlify-cli
-                    node_modules/.bin/netlify --version
-                    echo "Deploying to Production. Site ID is: $NETLIFY_SITE_ID"
-                    node_modules/.bin/netlify status
-                    node_modules/.bin/netlify deploy --prod --dir=build 
-                '''
-            }
-        }
     }
 }
-}
-
-      environment{
-            NETLIFY_AUTH_TOKEN = credentials('Jenkins_React')
-             NETLIFY_SITE_ID = mySiteId
-        }
