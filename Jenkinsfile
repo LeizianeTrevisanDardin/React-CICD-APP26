@@ -57,6 +57,7 @@ pipeline {
                     image 'node:24.13.0-alpine'
                     reuseNode true
                 }
+            }
 
                     steps{
                         sh '''
