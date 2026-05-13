@@ -25,17 +25,13 @@ pipeline {
             steps {
                 //this is step is to run in the image what we would in the terminal - the ls -la is to check what is in the folder
                 sh '''
-                ls -la
-                node --version
-                npm --version
-                npm install
-                npm run build
-
-                echo "After build:"
-                ls -la
-                ls -la dist || true
-                ls -la build || true
-            '''
+                    ls -la
+                    node --version
+                    npm --version
+                    npm install
+                    npm run build
+                    ls -la
+                '''
             }
         }
 
@@ -49,7 +45,7 @@ pipeline {
             }
                 steps {
                     sh '''
-                        test -f dist/index.html
+                        test -f build/index.html
                         npm test
                     '''
                 }
@@ -70,7 +66,7 @@ pipeline {
                     node_modules/.bin/netlify --version
                     echo "Deploying to production. Site ID:$NETLIFY_SITE_ID"
                     node_modules/.bin/netlify status
-                    node_modules/.bin/netlify deploy --prod --dir=dist --no-build
+                    node_modules/.bin/netlify deploy --prod --dir=build --no-build
                 '''
 
             }
