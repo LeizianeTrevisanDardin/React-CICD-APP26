@@ -12,6 +12,7 @@ pipeline {
 
 //CI stage -> CODE -> Build -> Test
     stages {
+
         stage('Build') {
 
             agent{
@@ -48,28 +49,31 @@ pipeline {
                         npm test
                     '''
                 }
-            }
         }
-
+        
         stage('Deploy') {
-            agent{
+            agent {
                 docker{
                     image 'node:24.13.0-alpine'
                     reuseNode true
                 }
             }
 
-                    steps{
-                        sh '''
-                            npm install netlify-cli
-                            node_modules/.bin/netlify --version
-                            echo "Deploying to production. Site ID:$NETLIFY_SITE_ID"
-                            node_modules./bin/netlify status
-                            node_modules./bin/netlify deploy --prod --dir=build
-                        '''
+            steps{
+                sh '''
+                    npm install netlify-cli
+                    node_modules/.bin/netlify --version
+                    echo "Deploying to production. Site ID:$NETLIFY_SITE_ID"
+                    node_modules/.bin/netlify status
+                    node_modules/.bin/netlify deploy --prod --dir=build
+                '''
 
-                }
             }
+        }
+        
+    }
 }
+
+
     
     
