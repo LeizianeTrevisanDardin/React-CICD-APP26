@@ -25,13 +25,17 @@ pipeline {
             steps {
                 //this is step is to run in the image what we would in the terminal - the ls -la is to check what is in the folder
                 sh '''
-                    ls -la
-                    node --version
-                    npm --version
-                    npm install
-                    npm run build
-                    ls -la
-                '''
+                ls -la
+                node --version
+                npm --version
+                npm install
+                npm run build
+
+                echo "After build:"
+                ls -la
+                ls -la dist || true
+                ls -la build || true
+            '''
             }
         }
 
