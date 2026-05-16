@@ -83,24 +83,11 @@ pipeline {
 
 
         stage('Build My Image'){
-            agent{
-                docker{
-                    image 'amazon/aws-cli'
-                    reuseNode true
-                    args '-u root -v /var/run/docker.sock:/var/run/docker.sock'
-                }
-            }
             steps{
-                withCredentials([
-                    usernamePassword(
-                        credentialsId: 'myNewUserKey',
-                        passwordVariable: 'AWS_SECRET_ACCESS_KEY',
-                        usernameVariable: 'AWS_ACCESS_KEY_ID'
-                    )
-                ]) {
-
+                withCredentials([usernamePassword(credentialsId: 'myNewUserKey', passwordVariable: 'AWS_SECRET_ACCESS_KEY', usernameVariable: 'AWS_ACCESS_KEY_ID')]) {
                     sh '''
                         docker version
+                        aws --version
 
                         docker build -t $AWS_DOCKER_REGISTRY/$APP_NAME:latest .
                         docker images
