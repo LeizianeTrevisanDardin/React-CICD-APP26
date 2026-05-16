@@ -96,7 +96,7 @@ stage('Build My Image'){
 
                     sh '''
                         dnf install -y docker
-                        docker build -t $AWS_DOCKER_REGISTRY/$APP_NAME .
+                        docker build -t $AWS_DOCKER_REGISTRY/$APP_NAME:latest .
                         docker images
 
                         aws ecr get-login-password | docker login --username AWS --password-stdin $AWS_DOCKER_REGISTRY
