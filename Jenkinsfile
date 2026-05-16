@@ -1,13 +1,19 @@
 pipeline {
     agent any
 
-    environment {//I will get the site id from netlify and paste as in the variable
-        NETLIFY_SITE_ID = '28275bfc-0647-424e-ba17-c73e7e3ff056' //this variable needs to be setup on Jenkins as well
-        //-> go to Netlify and then profile -> user account -> settings -> authorization -> Oath -> generate a new token ->copy it
-        //in Jenkins got to Settings and then Credentials -> system -> Global Credentials
-        //then choose secret text -> 
+    // environment {//I will get the site id from netlify and paste as in the variable
+    //     NETLIFY_SITE_ID = '28275bfc-0647-424e-ba17-c73e7e3ff056' //this variable needs to be setup on Jenkins as well
+    //     //-> go to Netlify and then profile -> user account -> settings -> authorization -> Oath -> generate a new token ->copy it
+    //     //in Jenkins got to Settings and then Credentials -> system -> Global Credentials
+    //     //then choose secret text -> 
 
-        NETLIFY_AUTH_TOKEN = credentials('myToken1') //use the name of your token variable here as safe to push to github
+    //     NETLIFY_AUTH_TOKEN = credentials('myToken1') //use the name of your token variable here as safe to push to github
+    // }
+
+    environment{
+        AWS_DOCKER_REGISTRY = '935140613475.dkr.ecr.us-east-2.amazonaws.com'
+        APP_NAME = 'my_image'
+        AWS_DEFAULT_REGION = 'us-east-2'
     }
 
 //CI stage -> CODE -> Build -> Test
@@ -51,30 +57,79 @@ pipeline {
                 }
         }
         
-        stage('Deploy') {
-            agent {
+//         stage('Deploy') {
+//             agent {
+//                 docker{
+//                     image 'node:24.13.0-alpine'
+//                     reuseNode true
+//                 }
+//             }
+
+//             // since jenkins did the build before it is recommended then just deploy it and no build
+//             steps{
+//                 sh '''
+//                     npm install netlify-cli
+//                     node_modules/.bin/netlify --version
+//                     echo "Deploying to production. Site ID:$NETLIFY_SITE_ID"
+//                     node_modules/.bin/netlify status
+//                     node_modules/.bin/netlify deploy --prod --dir=build --no-build
+//                 '''
+
+//             }
+//         }
+        
+//     }
+// }
+
+
+stage('Build My Image'){
+            agent{
                 docker{
-                    image 'node:24.13.0-alpine'
+                    image 'amazon/aws-cli'
                     reuseNode true
+                    args '-u root -v /var/run/docker.sock:/var/run/docker.sock --entrypoint=""'
                 }
             }
-
-            // since jenkins did the build before it is recommended then just deploy it and no build
             steps{
-                sh '''
-                    npm install netlify-cli
-                    node_modules/.bin/netlify --version
-                    echo "Deploying to production. Site ID:$NETLIFY_SITE_ID"
-                    node_modules/.bin/netlify status
-                    node_modules/.bin/netlify deploy --prod --dir=build --no-build
-                '''
+                withCredentials([usernamePassword(credentialsId: 'myNewUserKey', passwordVariable: 'AWS_SECRET_ACCESS_KEY', usernameVariable: 'AWS_ACCESS_KEY_ID')]) 
+                {
 
+                    sh '''
+                        dnf install -y docker
+                        docker build -t $AWS_DOCKER_REGISTRY/$APP_NAME .
+                        docker images
+
+                        aws ecr get-login-password | docker login --username AWS --password-stdin $AWS_DOCKER_REGISTRY
+                        docker push $AWS_DOCKER_REGISTRY/$APP_NAME:latest
+                    '''
+                }
             }
         }
-        
+        stage('Deploy to AWS ECS'){
+            agent{
+                docker{
+                    image 'amazon/aws-cli'
+                    reuseNode true
+                    args '-u root --entrypoint=""'
+                }
+            }
+            steps{
+                withCredentials([usernamePassword(credentialsId: 'myNewUserKey', passwordVariable: 'AWS_SECRET_ACCESS_KEY', usernameVariable: 'AWS_ACCESS_KEY_ID')]) 
+                {
+                    sh '''
+                        aws --version
+
+                        yum install jq -y
+
+                        LATEST_TD_REVISION=$(aws ecs register-task-definition --cli-input-json file://aws/task-definition.json | jq '.taskDefinition.revision')
+                        aws ecs update-service --cluster my-new-react-app-cluster-prod --service  my-new-react-app-cluster-prod:MyNewReactApp-TaskDefinition-Prod-service-km350rro --task-definition MyNewReactApp-TaskDefinition-Prod:$LATEST_TD_REVISION
+                    '''
+                }
+            }
+        }
+
     }
 }
-
 
     
     
